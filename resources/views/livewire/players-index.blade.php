@@ -10,7 +10,7 @@
         <tbody>
             @foreach ($players as $player)
                 <tr>
-                    <td>{{ $player->name }}</td>
+                    <td><a href="{{ route('players.show', $player) }}">{{ $player->name }}</a></td>
                 </tr>
             @endforeach
         </tbody>
