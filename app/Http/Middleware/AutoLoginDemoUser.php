@@ -15,6 +15,10 @@ class AutoLoginDemoUser
      */
     public function handle(Request $request, Closure $next): Response
     {
+        if (! app()->environment(['local', 'testing'])) {
+            return $next($request);
+        }
+
         if (Auth::guest()) {
             $user = User::where('email', 'admin@demo.test')->first();
 

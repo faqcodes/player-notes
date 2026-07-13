@@ -11,6 +11,8 @@ class UserSwitcher extends Component
 {
     public function switchTo(int $userId): void
     {
+        abort_unless(app()->environment(['local', 'testing']), 403);
+
         $user = User::whereIn('email', ['admin@demo.test', 'viewer@demo.test'])->findOrFail($userId);
         Auth::login($user);
         $this->js('window.location.reload()');
