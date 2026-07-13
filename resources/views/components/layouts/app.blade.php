@@ -7,6 +7,8 @@
         <title>{{ $title ?? 'Page Title' }}</title>
     </head>
     <body>
+        <livewire:user-switcher />
+
         {{ $slot }}
     </body>
 </html>
