@@ -31,10 +31,10 @@ services:
         ports:
             - '${FORWARD_DB_PORT:-5432}:5432'
         environment:
-            PGPASSWORD: '${DB_PASSWORD:-secret}'
-            POSTGRES_DB: '${DB_DATABASE}'
-            POSTGRES_USER: '${DB_USERNAME}'
-            POSTGRES_PASSWORD: '${DB_PASSWORD:-secret}'
+            PGPASSWORD: '${DB_PASSWORD:-password}'
+            POSTGRES_DB: '${DB_DATABASE:-laravel}'
+            POSTGRES_USER: '${DB_USERNAME:-sail}'
+            POSTGRES_PASSWORD: '${DB_PASSWORD:-password}'
         volumes:
             - 'sail-pgsql:/var/lib/postgresql'
             - './vendor/laravel/sail/database/pgsql/create-testing-database.sql:/docker-entrypoint-initdb.d/10-create-testing-database.sql'
@@ -46,9 +46,9 @@ services:
                 - pg_isready
                 - '-q'
                 - '-d'
-                - '${DB_DATABASE}'
+                - '${DB_DATABASE:-laravel}'
                 - '-U'
-                - '${DB_USERNAME}'
+                - '${DB_USERNAME:-sail}'
             retries: 3
             timeout: 5s
     migrate:
@@ -65,7 +65,7 @@ services:
         command:
             - sh
             - -c
-            - 'cd /var/www/html && ([ -d node_modules ] || npm install) && ([ -f public/build/manifest.json ] || npm run build) && (grep -q "^APP_KEY=base64:" .env || php artisan key:generate --force) && php artisan migrate --force --seed'
+            - 'cd /var/www/html && ([ -f .env ] || cp .env.example .env) && ([ -d node_modules ] || npm install) && ([ -f public/build/manifest.json ] || npm run build) && (grep -q "^APP_KEY=base64:" .env || php artisan key:generate --force) && php artisan migrate --force --seed'
         depends_on:
             pgsql:
                 condition: service_healthy
