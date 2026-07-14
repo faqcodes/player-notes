@@ -13,8 +13,6 @@ git clone git@github.com:faqcodes/player-notes.git
 cd player-notes
 cp .env.example .env
 
-# Instala las dependencias de Composer sin necesitar PHP ni Composer local,
-# usando un contenedor desechable (así aparece ./vendor/bin/sail):
 docker run --rm \
     -u "$(id -u):$(id -g)" \
     -v "$(pwd):/var/www/html" \
@@ -25,8 +23,6 @@ docker run --rm \
 ./vendor/bin/sail up -d
 ./vendor/bin/sail artisan key:generate
 ```
-
-`vendor/` no se versiona, por eso el `composer install` inicial es necesario tras clonar. `key:generate` genera la `APP_KEY` de la app (viene vacía en `.env.example`). Al levantar, el servicio `migrate` corre `php artisan migrate --force --seed` en cuanto la base de datos Postgres queda `healthy`: migraciones y datos de demo (roles, users, players y notas) quedan cargados solos, sin pasos manuales.
 
 Listo: la app queda en http://localhost con datos de demo cargados.
 
