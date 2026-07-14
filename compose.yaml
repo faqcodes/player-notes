@@ -22,7 +22,10 @@ services:
         networks:
             - sail
         depends_on:
-            - pgsql
+            pgsql:
+                condition: service_healthy
+            migrate:
+                condition: service_completed_successfully
     pgsql:
         image: 'postgres:18-alpine'
         ports:
@@ -59,7 +62,10 @@ services:
             - '.:/var/www/html'
         environment:
             WWWUSER: '${WWWUSER:-1337}'
-        command: ['php', '/var/www/html/artisan', 'migrate', '--force', '--seed']
+        command:
+            - sh
+            - -c
+            - 'cd /var/www/html && ([ -d node_modules ] || npm install) && ([ -f public/build/manifest.json ] || npm run build) && (grep -q "^APP_KEY=base64:" .env || php artisan key:generate --force) && php artisan migrate --force --seed'
         depends_on:
             pgsql:
                 condition: service_healthy
