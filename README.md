@@ -9,7 +9,7 @@ Módulo de historial de notas internas de jugadores para agentes de soporte.
 ## Levantar el proyecto
 
 ```bash
-git clone <url-del-repo> player-notes
+git clone git@github.com:faqcodes/player-notes.git
 cd player-notes
 cp .env.example .env
 
@@ -23,9 +23,10 @@ docker run --rm \
     composer install --ignore-platform-reqs
 
 ./vendor/bin/sail up -d
+./vendor/bin/sail artisan key:generate
 ```
 
-`vendor/` no se versiona, por eso el `composer install` inicial es necesario tras clonar. Al levantar, el servicio `migrate` corre `php artisan migrate --force --seed` en cuanto la base de datos Postgres queda `healthy`: migraciones y datos de demo (roles, users, players y notas) quedan cargados solos, sin pasos manuales.
+`vendor/` no se versiona, por eso el `composer install` inicial es necesario tras clonar. `key:generate` genera la `APP_KEY` de la app (viene vacía en `.env.example`). Al levantar, el servicio `migrate` corre `php artisan migrate --force --seed` en cuanto la base de datos Postgres queda `healthy`: migraciones y datos de demo (roles, users, players y notas) quedan cargados solos, sin pasos manuales.
 
 Listo: la app queda en http://localhost con datos de demo cargados.
 
