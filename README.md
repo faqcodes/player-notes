@@ -21,12 +21,9 @@ docker run --rm \
     composer install --ignore-platform-reqs
 
 ./vendor/bin/sail up -d
-./vendor/bin/sail artisan key:generate
-./vendor/bin/sail npm install
-./vendor/bin/sail npm run build
 ```
 
-Listo: la app queda en http://localhost con datos de demo cargados.
+Listo: la app queda en http://localhost con datos de demo cargados. El primer arranque genera la `APP_KEY`, compila los assets y corre migraciones + seeds automáticamente (puede tardar ~1 min).
 
 ## Demo
 
