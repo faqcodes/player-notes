@@ -1,59 +1,80 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# Player Notes
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+Módulo de historial de notas internas de jugadores para agentes de soporte.
 
-## About Laravel
+## Requisitos
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+- Docker Desktop
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+## Levantar el proyecto
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+```bash
+git clone <url-del-repo> player-notes
+cd player-notes
+cp .env.example .env
+./vendor/bin/sail up -d
+```
 
-## Learning Laravel
+Al levantar, el servicio `migrate` corre `php artisan migrate --force --seed` en cuanto la base de datos Postgres queda `healthy`: migraciones y datos de demo (roles, users, players y notas) quedan cargados solos, sin pasos manuales.
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework. You can also check out [Laravel Learn](https://laravel.com/learn), where you will be guided through building a modern Laravel application.
+Listo: la app queda en http://localhost con datos de demo cargados.
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+## Demo
 
-## Laravel Sponsors
+En entorno local no hay pantalla de login: la app auto-loguea a **Admin Demo** y expone un dropdown de usuario activo (arriba a la derecha) para cambiar entre los dos users demo:
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
+- **Admin Demo** (`admin@demo.test`) — rol `admin`: puede leer el historial y agregar notas nuevas.
+- **Viewer Demo** (`viewer@demo.test`) — rol `viewer`: solo puede leer el historial; el formulario de nota no está disponible para este rol.
 
-### Premium Partners
+Recorrido:
 
-- **[Vehikl](https://vehikl.com)**
-- **[Tighten Co.](https://tighten.co)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel)**
-- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
-- **[Redberry](https://redberry.international/laravel-development)**
-- **[Active Logic](https://activelogic.com)**
+1. Entrar a `/players` — lista de jugadores.
+2. Clic en un jugador — historial de notas (autor, fecha, contenido), paginado.
+3. Con **Admin Demo** activo, agregar una nota: valida que no esté vacía y que no supere el máximo de caracteres (con contador en vivo), y al guardar refresca el listado automáticamente sin recargar la página.
 
-## Contributing
+## Arquitectura
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+- **Patrón Repositorio**: `App\Contracts\PlayerNoteRepositoryInterface` define el contrato (`getNotesForPlayer`, `createNoteForPlayer`); `App\Repositories\EloquentPlayerNoteRepository` es la implementación Eloquent; el binding vive en `App\Providers\AppServiceProvider`. El objetivo es que tanto la UI Livewire como el servidor MCP consuman el mismo repositorio, sin lógica duplicada.
+- **Autorización con spatie/laravel-permission**: se eligió el estándar del ecosistema Laravel en vez de una Policy nativa, para tener vocabulario conocido por cualquier equipo y quedar extensible sin refactor si aparecen más roles o permisos. Roles: `admin` (puede crear notas) y `viewer` (solo lee); permiso: `create player notes`. Detalle en `docs/adr/0001-spatie-permission-para-roles.md`.
+- **Modelo de dominio**:
+  - `Player`: jugador de la plataforma sobre el que se dejan notas. Solo se consulta en este alcance (no se crea ni edita desde la UI). Tiene muchas `PlayerNote` (`notes()`).
+  - `PlayerNote`: nota interna e inmutable (se crea y se lista; no se edita ni borra). Pertenece a un `Player` (`player()`) y a un `User` autor (`author()`).
+  - `User`: agente de soporte, autor de notas (`authoredNotes()`). Tiene rol `admin` o `viewer`.
+- Más contexto de dominio en `CONTEXT.md` y decisiones en `docs/adr/`.
 
-## Code of Conduct
+## Tests
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+```bash
+./vendor/bin/sail artisan test
+```
 
-## Security Vulnerabilities
+Cubren:
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+- que un admin puede crear una nota y queda guardada en la base de datos;
+- que se rechaza una nota vacía;
+- que se rechaza una nota que supera el largo máximo permitido;
+- que un viewer no puede crear una nota (403 del lado del servidor, no solo oculto en la UI).
 
-## License
+## MCP (bonus)
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+El proyecto expone un servidor MCP (paquete oficial `laravel/mcp`) en el endpoint `/mcp`, con 3 tools que reutilizan el mismo repositorio y la misma constante de largo máximo que usa el formulario Livewire:
+
+- `list-players` — lista todos los jugadores con su id.
+- `get-player-notes` — historial de notas de un jugador (`player_id`).
+- `create-player-note` — crea una nota nueva para un jugador (`player_id`, `content`).
+
+Las notas creadas por este canal quedan atribuidas a un user dedicado **"AI Agent"** (no a un agente humano existente), para no falsear la auditoría de quién escribió cada nota; basta con quitarle el permiso `create player notes` a ese user para apagar el canal del agente. Detalle en `docs/adr/0002-mcp-segundo-canal-autor-ai-agent.md`.
+
+Para conectar un cliente MCP con transporte HTTP, un snippet de configuración típico:
+
+```json
+{
+  "mcpServers": {
+    "player-notes": {
+      "url": "http://localhost/mcp"
+    }
+  }
+}
+```
+
+El endpoint `/mcp` no lleva autenticación por ser un demo local; en producción habría que autenticarlo (OAuth/token) y no exponerlo abierto.
