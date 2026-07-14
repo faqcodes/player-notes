@@ -11,7 +11,6 @@ Módulo de historial de notas internas de jugadores para agentes de soporte.
 ```bash
 git clone git@github.com:faqcodes/player-notes.git
 cd player-notes
-cp .env.example .env
 
 docker run --rm \
     -u "$(id -u):$(id -g)" \
@@ -23,7 +22,14 @@ docker run --rm \
 ./vendor/bin/sail up -d
 ```
 
-Listo: la app queda en http://localhost con datos de demo cargados. El primer arranque genera la `APP_KEY`, compila los assets y corre migraciones + seeds automáticamente (puede tardar ~1 min).
+Listo: la app queda en http://localhost con datos de demo cargados. El primer arranque crea el `.env`, genera la `APP_KEY`, compila los assets y corre migraciones + seeds automáticamente (puede tardar ~1 min).
+
+## Detener el proyecto
+
+```bash
+./vendor/bin/sail down       # detiene y elimina los contenedores (conserva la base de datos)
+./vendor/bin/sail down -v    # además elimina el volumen: borra la base de datos y sus datos
+```
 
 ## Demo
 
