@@ -12,10 +12,20 @@ Módulo de historial de notas internas de jugadores para agentes de soporte.
 git clone <url-del-repo> player-notes
 cd player-notes
 cp .env.example .env
+
+# Instala las dependencias de Composer sin necesitar PHP ni Composer local,
+# usando un contenedor desechable (así aparece ./vendor/bin/sail):
+docker run --rm \
+    -u "$(id -u):$(id -g)" \
+    -v "$(pwd):/var/www/html" \
+    -w /var/www/html \
+    laravelsail/php84-composer:latest \
+    composer install --ignore-platform-reqs
+
 ./vendor/bin/sail up -d
 ```
 
-Al levantar, el servicio `migrate` corre `php artisan migrate --force --seed` en cuanto la base de datos Postgres queda `healthy`: migraciones y datos de demo (roles, users, players y notas) quedan cargados solos, sin pasos manuales.
+`vendor/` no se versiona, por eso el `composer install` inicial es necesario tras clonar. Al levantar, el servicio `migrate` corre `php artisan migrate --force --seed` en cuanto la base de datos Postgres queda `healthy`: migraciones y datos de demo (roles, users, players y notas) quedan cargados solos, sin pasos manuales.
 
 Listo: la app queda en http://localhost con datos de demo cargados.
 
